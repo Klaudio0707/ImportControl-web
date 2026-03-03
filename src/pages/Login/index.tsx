@@ -8,7 +8,7 @@ import * as z from 'zod';
 
 const loginSchema = z.object({
   email: z.string().email("E-mail inválido"),
-  password: z.string().min(6, "A senha deve ter pelo menos 6 caracteres")
+  password: z.string().min(2, "A senha deve ter pelo menos 2 caracteres")
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
@@ -33,6 +33,7 @@ const Login = () => {
   const onSubmit = async (data: LoginFormData) => {
     try {
       await signIn(data.email, data.password);
+      console.log(data.email, data.password);
       navigate(from, { replace: true });
     } catch (error) {
       toast("Tentativa falhou "+ error);
