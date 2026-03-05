@@ -1,37 +1,56 @@
-import React, { createContext, useState, useContext, type ReactNode } from 'react';
-import { api } from '../config/api';
+import { createContext, useContext, useState, useEffect } from 'react';
+import { jwtDecode } from 'jwt-decode'; // Biblioteca para ler o recheio do Token
 import { authService } from '../services/AuthService';
+import { api } from '../config/api';
 
-interface AuthContextData {
-    token: string | null;
-    isAuthenticated: boolean;
-    signIn: (login: string, senha: string) => Promise<void>;
-    signOut: () => void;
+interface User {
+  id: number;
+  email: string;
+  nome?: string;
 }
 
-const AuthContext = createContext<AuthContextData>({} as AuthContextData);
+interface AuthContextData {
+  user: User | null;
+  signIn: (email: string, pass: string) => Promise<void>;
+  signed: boolean;
+}
 
-export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-    const [token, setToken] = useState<string | null>(null);
+export const AuthContext = createContext<AuthContextData>({} as AuthContextData);
 
-    const signIn = async (login: string, senha: string) => {
-        const jwtToken = await authService.login(login, senha);
+export const AuthContextProvider = ({ children }: { children: React.ReactNode }) => {
+  const [user, setUser] = useState<User | null>(null);
 
-        setToken(jwtToken);
+  // Efeito para recuperar o usuário se o Token já existir no LocalStorage (F5)
+  useEffect(() => {
+    const storagedToken = localStorage.getItem('@ImportControl:token');
+    if (storagedToken) {
+      try {
+        const decoded: any = jwtDecode(storagedToken);
+        // O "sub" no JWT costuma ser o e-mail ou ID. 
+        // Ajuste conforme o que o seu Spring Boot envia no Token!
+        setUser({ id: decoded.id || 1, email: decoded.sub });
+      } catch {
+        localStorage.removeItem('@ImportControl:token');
+      }
+    }
+  }, []);
 
-        api.defaults.headers.common['Authorization'] = `Bearer ${jwtToken}`;
-    };
+  const signIn = async (email: string, pass: string) => {
+    const token = await authService.login(email, pass);
+    localStorage.setItem('@ImportControl:token', token);
+    
+    // Decodifica o token acabado de receber e salva o user no estado
+    const decoded: any = jwtDecode(token);
+    setUser({ id: decoded.id || 1, email: decoded.sub });
+    
+    api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+  };
 
-    const signOut = () => {
-        setToken(null);
-        delete api.defaults.headers.common['Authorization'];
-    };
-
-    return (
-        <AuthContext.Provider value={{ token, isAuthenticated: !!token, signIn, signOut }}>
-            {children}
-        </AuthContext.Provider>
-    );
+  return (
+    <AuthContext.Provider value={{ user, signIn, signed: !!user }}>
+      {children}
+    </AuthContext.Provider>
+  );
 };
 
 export const useAuth = () => useContext(AuthContext);

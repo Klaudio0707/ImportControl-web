@@ -1,8 +1,10 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import './App.css'
-import { Toaster } from './components/ui/sonner'
-import { AuthProvider } from './contexts/AuthContext'
-import Login from './pages/Login'
+import { Toaster } from './components/ui/sonner';
+import { AuthContextProvider } from './contexts/AuthContext';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import Dashboard from './pages/Dashboard';
+import Process from './pages/Process';
 
 function App() {
 
@@ -10,19 +12,20 @@ function App() {
   return (
     <>
       <Toaster />
-      <AuthProvider>
+      <AuthContextProvider>
         <BrowserRouter>
           <Routes>
-            {/* Rota Pública */}
             <Route path="/login" element={<Login />} />
-            {/* <Route 
+            <Route path="/register" element={<Register />} />
+            <Route 
               path="/dashboard" 
               element={<Dashboard />} 
-            /> */}
+            />
+            <Route path='/process' element={<Process />} />
             <Route path="*" element={<Navigate to="/login" replace />} />
           </Routes>
         </BrowserRouter>
-      </AuthProvider>
+      </AuthContextProvider>
     </>
   )
 }
