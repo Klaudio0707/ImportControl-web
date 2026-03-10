@@ -1,73 +1,58 @@
-# React + TypeScript + Vite
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+# 📦 Import Control - Web UI
 
-Currently, two official plugins are available:
+<img width="948" height="504" alt="image" src="https://github.com/user-attachments/assets/59f91c31-e817-4dc8-bab4-2861d0779651" />
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
 
-## React Compiler
+![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
+![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)
+![Vite](https://img.shields.io/badge/Vite-B73BFE?style=for-the-badge&logo=vite&logoColor=FFD62E)
+![React Hook Form](https://img.shields.io/badge/React%20Hook%20Form-%23EC5990.svg?style=for-the-badge&logo=reacthookform&logoColor=white)
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Interface de usuário (SPA) para o sistema de gestão de processos de importação. Este frontend foi construído com foco em **Clean Code**, alta performance de renderização e forte tipagem estática para garantir resiliência na comunicação com a API RESTful.
 
-## Expanding the ESLint configuration
+## 🚀 Tecnologias Utilizadas
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+A stack foi escolhida para garantir manutenção facilitada e uma experiência de usuário fluida:
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+* **React 18 + Vite:** Base da aplicação, garantindo um ambiente de desenvolvimento ultra-rápido.
+* **TypeScript:** Tipagem estática baseada nos DTOs do backend para evitar erros em tempo de execução.
+* **React Hook Form:** Gerenciamento de formulários complexos com alta performance, evitando re-renderizações desnecessárias e "estado espaguete".
+* **React Router Dom:** Gerenciamento de rotas dinâmicas (ex: rotas parametrizadas para criação/edição `/:id`).
+* **Axios:** Cliente HTTP configurado para requisições assíncronas (com suporte futuro a Interceptors para JWT).
+* **Sonner:** Biblioteca de toasts para feedback visual imediato (sucesso/erro) nas ações do usuário.
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## ✨ Funcionalidades da Interface
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+- [x] **Dashboard Dinâmico:** Tabela responsiva exibindo a listagem de processos com formatação automática de moedas (USD/BRL) e tags de status condicionais.
+- [x] **Formulário Inteligente (Single Source of Truth):** O mesmo componente (`NovoProcesso`) lida com a Criação (POST) e Edição (PUT) mapeando os dados a partir da URL.
+- [x] **Validação de Inputs:** Regras de negócio aplicadas no front, com inputs tipados para números e datas (formato ISO).
+- [ ] **Filtros e Pesquisa:** (Em breve) Busca em tempo real de invoices e fornecedores.
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## 🛠️ Como executar o projeto localmente
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### Pré-requisitos
+* Node.js (v18 ou superior)
+* NPM ou Yarn
+* A API Backend (Spring Boot) rodando localmente na porta 8080 (ou URL configurada).
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+### Passo a passo
+
+1. **Clone o repositório:**
+   ```bash
+   Instale as dependências:
+
+2. **Bash**
+npm install
+Configure as Variáveis de Ambiente:
+Crie um arquivo .env na raiz do projeto e aponte para a sua API local:
+
+3. **Snippet de código**
+VITE_API_URL=http://localhost:8080
+Inicie o servidor de desenvolvimento:
+
+Bash
+npm run dev
+A aplicação estará acessível no seu navegador em http://localhost:5173.
+   git clone https://github.com/Klaudio0707/ImportControl-web
+   cd import-control-frontend
