@@ -5,6 +5,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Process from './pages/Process';
+import Header from './components/Header';
 
 function App() {
 
@@ -14,6 +15,7 @@ function App() {
       <Toaster />
       <AuthContextProvider>
         <BrowserRouter>
+        <Header/>
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
@@ -21,6 +23,7 @@ function App() {
               path="/dashboard" 
               element={<Dashboard />} 
             />
+            <Route path="/process/:id" element={<Process />} />
             <Route path='/process' element={<Process />} />
             <Route path="*" element={<Navigate to="/login" replace />} />
           </Routes>

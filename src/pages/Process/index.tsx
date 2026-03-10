@@ -1,88 +1,133 @@
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { useNavigate } from 'react-router-dom';
-import { toast } from 'sonner';
+import { useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { useForm } from 'react-hook-form'; 
 import { api } from '../../config/api';
-import { useAuth } from '../../contexts/AuthContext';
-
-const processoSchema = z.object({
-  // Dados do Processo
-  numeroProcesso: z.string().min(1, "Obrigatório"),
-  identificadorInvoice: z.string().min(1, "Obrigatório"),
-  fornecedor: z.string().min(1, "Obrigatório"),
-  produto: z.string().min(1, "Obrigatório"),
-  quantidade: z.number().positive("Deve ser > 0"),
-  preco: z.number().positive("Deve ser > 0"),
-  previsaoEmbarque: z.string().min(1, "Data é obrigatória"),
-  unidadeMedida: z.string().min(1, "Selecione"),
-  statusProcesso: z.string().min(1, "Selecione"),
-  statusPagamento: z.string().min(1, "Selecione"),
-  
-  // Dados da Condição (A lógica "Smart" que você criou)
-  descricaoCondicao: z.string().min(1, "Ex: Net 30"),
-  diasPrazoCondicao: z.number().min(0, "Mínimo 0 dias")
-});
+import { toast } from 'sonner';
 
 
-type ProcessoFormData = z.infer<typeof processoSchema>;
+interface ProcessoFormulario {
+  numeroProcesso: string;
+  identificadorInvoice: string;
+  fornecedor: string;
+  produto: string;
+  quantidade: number;
+  preco: number;
+  previsaoEmbarque: string;
+  unidadeMedida: string;
+  statusProcesso: string;
+  statusPagamento: string;
+  descricaoCondicao: string;
+  diasPrazoCondicao: number;
+}
 
 const NovoProcesso = () => {
+  const { id } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth(); 
+  const [loadingForm, setLoadingForm] = useState(false); // Evita conflito de nome com o form
 
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<ProcessoFormData>({
-    resolver: zodResolver(processoSchema),
+  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<ProcessoFormulario>({
     defaultValues: {
-        statusProcesso: "EM_TRANSITO", 
-        statusPagamento: "PENDENTE",
-        unidadeMedida: "UN"
+      unidadeMedida: 'UN',
+      statusProcesso: 'EM_TRANSITO',
+      statusPagamento: 'PENDENTE',
+      quantidade: 0,
+      preco: 0,
+      diasPrazoCondicao: 0
     }
   });
 
-const onSubmit = async (data: ProcessoFormData) => {
+
+  useEffect(() => {
+    if (id) {
+      buscarProcessoParaEdicao(id);
+    }
+  }, [id]);
+
+  const buscarProcessoParaEdicao = async (processoId: string) => {
     try {
-      // Montamos o Payload Complexo para o Java
+      setLoadingForm(true);
+      const response = await api.get(`/processos/${processoId}`);
+      const dadosBanco = response.data;
+      
+     
+      reset({
+        numeroProcesso: dadosBanco.numeroProcesso || '',
+        identificadorInvoice: dadosBanco.identificadorInvoice || '',
+        fornecedor: dadosBanco.fornecedor || '',
+        produto: dadosBanco.produto || '',
+        quantidade: dadosBanco.quantidade || 0,
+        preco: dadosBanco.preco || 0,
+        previsaoEmbarque: dadosBanco.previsaoEmbarque ? dadosBanco.previsaoEmbarque.split('T')[0] : '',
+        unidadeMedida: dadosBanco.unidadeMedida || 'UN',
+        statusProcesso: dadosBanco.statusLogistico || 'EM_TRANSITO',
+        statusPagamento: dadosBanco.statusFinanceiro || 'PENDENTE',
+        descricaoCondicao: typeof dadosBanco.condicaoPagamento === 'string' ? dadosBanco.condicaoPagamento : '',
+        diasPrazoCondicao: 0 
+      });
+    } catch (error) {
+      console.error("Erro ao carregar processo para edição:", error);
+      toast.error("Processo não encontrado.");
+      navigate('/dashboard');
+    } finally {
+      setLoadingForm(false);
+    }
+  };
+
+  
+  const onSubmit = async (data: ProcessoFormulario) => {
+    try {
+      
       const payload = {
         numeroProcesso: data.numeroProcesso,
         identificadorInvoice: data.identificadorInvoice,
         fornecedor: data.fornecedor,
         produto: data.produto,
-        quantidade: data.quantidade,
-        preco: data.preco,
+        quantidade: Number(data.quantidade), 
+        preco: Number(data.preco),           
         previsaoEmbarque: data.previsaoEmbarque,
         unidadeMedida: data.unidadeMedida,
         statusProcesso: data.statusProcesso,
         statusPagamento: data.statusPagamento,
-        usuarioId: user?.id || 1,
-        
-        // Aqui enviamos a condição para o seu Service.buscarOuCriar
+        usuarioId: 1, 
         condicaoPagamento: {
           descricao: data.descricaoCondicao,
-          diasPrazo: data.diasPrazoCondicao,
-          usuario: { id: user?.id || 1 }
+          diasPrazo: Number(data.diasPrazoCondicao)
         }
       };
-      await api.post('/processos', payload);
-      toast.success("Importação e Condição processadas com sucesso!");
+
+      if (id) {
+        await api.put(`/processos/${id}`, payload);
+        toast.success("Processo atualizado com sucesso!");
+      } else {
+        await api.post('/processos', payload);
+        toast.success("Processo criado com sucesso!");
+      }
       navigate('/dashboard');
-    } catch (error: any) {
-      console.error("Erro no POST:", error.response?.data);
-      toast.error("Falha ao salvar. Verifique a estrutura do DTO no Java.");
+    } catch (error) {
+      console.error("Erro ao salvar:", error);
+      toast.error("Erro ao salvar. Verifique os dados.");
     }
   };
 
   return (
-    <section className="form_page_container">
-      <form onSubmit={handleSubmit(onSubmit)} className="form_card" style={{ maxWidth: '800px' }}>
-        <h1 className="form_title">Novo Processo</h1>
-        
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+    <section className="container" style={{ padding: '2rem' }}>
+      <h1 className="form_title">{id ? 'Editar Processo' : 'Novo Processo'}</h1>
+      
+      {loadingForm && id ? (
+        <p style={{ textAlign: 'center', color: 'var(--text-color-light)' }}>Carregando dados da nuvem...</p>
+      ) : (
+       
+        <form onSubmit={handleSubmit(onSubmit)} className="form_card">
           
-          <div className="input_group">
+          <div className="input_group" style={{ marginBottom: '1rem' }}>
             <label>Número do Processo</label>
-            <input className="input_field" {...register('numeroProcesso')} />
-            {errors.numeroProcesso && <p className="error_message">{errors.numeroProcesso.message}</p>}
+            <input 
+              type="text" 
+              className="input_field" 
+              {...register('numeroProcesso', { required: "Número é obrigatório" })} 
+              disabled={!!id} 
+            />
+            {errors.numeroProcesso && <p className="error_message" style={{ color: 'red', fontSize: '0.8rem' }}>{errors.numeroProcesso.message}</p>}
           </div>
 
           <div className="input_group">
@@ -113,7 +158,6 @@ const onSubmit = async (data: ProcessoFormData) => {
           <div className="input_group">
             <label>Previsão de Embarque</label>
             <input type="date" className="input_field" {...register('previsaoEmbarque')} />
-            {errors.previsaoEmbarque && <p className="error_message">{errors.previsaoEmbarque.message}</p>}
           </div>
 
           <div className="input_group">
@@ -121,7 +165,7 @@ const onSubmit = async (data: ProcessoFormData) => {
             <select className="input_field" {...register('unidadeMedida')}>
               <option value="UN">UNIDADE</option>
               <option value="KG">KG</option>
-               <option value="CX">CAIXA</option>
+              <option value="CX">CAIXA</option>
               <option value="L">Litro</option>
               <option value="TON">TONELADA</option>
             </select>
@@ -140,48 +184,41 @@ const onSubmit = async (data: ProcessoFormData) => {
             </select>
           </div>
 
-          <div className="input_group">
-            <label>Status Financeiro</label>
-            <select className="input_field" {...register('statusPagamento')}>
-              <option value="PENDENTE">Pendente</option>
-              <option value="PAGO">Pago</option>
-               <option value="ATRASADO">Atrasado</option>
-              <option value="CANCELADO">Cancelado</option>
-            </select>
-          </div>
-
-          <div className="input_group">
-           <div style={{ marginTop: '1.5rem', padding: '1rem', border: '1px solid var(--border-color)', borderRadius: '8px', background: 'rgba(255,255,255,0.02)' }}>
-          <h3 style={{ marginBottom: '1rem', fontSize: '1rem', color: 'var(--primary-color)' }}>Financeiro & Condição</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
-            <div className="input_group">
+          <div style={{ marginTop: '1.5rem', padding: '1rem', border: '1px solid var(--border-color)', borderRadius: '8px', background: 'rgba(255,255,255,0.02)' }}>
+            <h3 style={{ marginBottom: '1rem', fontSize: '1rem', color: 'var(--primary-color)' }}>Financeiro & Condição</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
+              
+              <div className="input_group">
                 <label>Status Pagamento</label>
                 <select className="input_field" {...register('statusPagamento')}>
-                    <option value="PENDENTE">Pendente</option>
-                    <option value="PAGO">Pago</option>
+                  <option value="PENDENTE">Pendente</option>
+                  <option value="PAGO">Pago</option>
+                  <option value="ATRASADO">Atrasado</option>
+                  <option value="CANCELADO">Cancelado</option>
                 </select>
-            </div>
-            <div className="input_group">
+              </div>
+
+              <div className="input_group">
                 <label>Condição (Nome)</label>
                 <input className="input_field" {...register('descricaoCondicao')} placeholder="Ex: Net 30" />
-            </div>
-            <div className="input_group">
+              </div>
+
+              <div className="input_group">
                 <label>Dias de Prazo</label>
                 <input type="number" className="input_field" {...register('diasPrazoCondicao', { valueAsNumber: true })} />
+              </div>
+
             </div>
           </div>
-        </div>
+
+          <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
+            <button type="button" className="btn btn-secondary" style={{ flex: 1 }} onClick={() => navigate('/dashboard')}>Cancelar</button>
+            <button type="submit" className="btn" style={{ flex: 1 }} disabled={isSubmitting}>
+              {isSubmitting ? 'Gravando...' : 'Gravar Processo'}
+            </button>
           </div>
-
-        </div>
-
-        <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
-          <button type="button" className="btn btn-secondary" style={{ flex: 1 }} onClick={() => navigate('/dashboard')}>Cancelar</button>
-          <button type="submit" className="btn" style={{ flex: 1 }} disabled={isSubmitting}>
-            {isSubmitting ? 'Gravando...' : 'Gravar Processo'}
-          </button>
-        </div>
-      </form>
+        </form>
+      )}
     </section>
   );
 };

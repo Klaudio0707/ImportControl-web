@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { api } from '../../config/api';
 import { toast } from "sonner"
 import { useAuth } from '../../contexts/AuthContext';
-// import styles from './Register.module.css'; // Supondo que você tenha um CSS para ele
+
 
 const registroSchema = z.object({
   nome: z.string().min(3, "O nome deve ter pelo menos 3 letras"),
@@ -16,7 +16,7 @@ const registroSchema = z.object({
   acesso: z.enum(["ADMIN", "USER"])
 }).refine((data) => data.senha === data.confirmar_senha, {
   message: "As senhas não coincidem!",
-  path: ["confirmar_senha"] // Isso faz o erro aparecer exatamente embaixo do input de confirmar senha
+  path: ["confirmar_senha"] 
 });
 
 type RegistroFormData = z.infer<typeof registroSchema>;

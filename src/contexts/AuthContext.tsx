@@ -20,14 +20,11 @@ export const AuthContext = createContext<AuthContextData>({} as AuthContextData)
 export const AuthContextProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
 
-  // Efeito para recuperar o usuário se o Token já existir no LocalStorage (F5)
   useEffect(() => {
     const storagedToken = localStorage.getItem('@ImportControl:token');
     if (storagedToken) {
       try {
         const decoded: any = jwtDecode(storagedToken);
-        // O "sub" no JWT costuma ser o e-mail ou ID. 
-        // Ajuste conforme o que o seu Spring Boot envia no Token!
         setUser({ id: decoded.id || 1, email: decoded.sub });
       } catch {
         localStorage.removeItem('@ImportControl:token');
@@ -39,7 +36,6 @@ export const AuthContextProvider = ({ children }: { children: React.ReactNode })
     const token = await authService.login(email, pass);
     localStorage.setItem('@ImportControl:token', token);
     
-    // Decodifica o token acabado de receber e salva o user no estado
     const decoded: any = jwtDecode(token);
     setUser({ id: decoded.id || 1, email: decoded.sub });
     
